@@ -1,0 +1,101 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+Icon?
+.Spotlight-V100
+.Trashes
+
+# IDEs / Editors
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# JetBrains
+*.iml
+out/
+
+# Visual Studio / .NET
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build / Distribution
+dist/
+build/
+release/
+target/
+out/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# PHP / Composer
+vendor/
+composer.lock
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+
+# Logs & reports
+*.log
+logs/
+*.log.*
+*.trace
+
+# Test coverage
+coverage/
+.nyc_output/
+coverage-final.json
+lcov-report/
+
+# Databases
+*.sqlite
+*.sqlite3
+*.db
+*.sql
+
+# Environment & secrets
+.env
+.env.*
+secrets.*
+*.key
+*.pem
+
+# Certificates and keys
+*.crt
+*.cer
+
+# Misc
+.DS_Store
+*.bak
+*.tmp
+*.swp
+*.swo
+*.lock
+.idea_modules/
+thumbs.db

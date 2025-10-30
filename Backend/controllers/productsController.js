@@ -1,51 +1,56 @@
-import { supabase } from '../config/database.js';
+import pool from '../config/database.js';
 
+/**
+ * Get all products with pagination and search
+ * GET /api/products?search=...&page=1&limit=20
+ */
 export async function getAllProducts(req, res) {
     try {
         const userId = req.user.userId;
-        const { search, page, limit } = req.query;
+        const { search, page = 1, limit = 20 } = req.query;
 
         const offset = (page - 1) * limit;
 
-        let query = supabase
-            .from('products')
-            .select('*', { count: 'exact' })
-            .eq('user_id', userId);
+        let countQuery = 'SELECT COUNT(*) FROM products WHERE user_id = $1';
+        let dataQuery = 'SELECT * FROM products WHERE user_id = $1';
+        let queryParams = [userId];
+        let countParams = [userId];
 
+        // Add search if provided
         if (search) {
-            query = query.or(`article_no.ilike.%${search}%,product_service.ilike.%${search}%`);
+            const searchCondition = ' AND (article_no ILIKE $2 OR product_service ILIKE $2)';
+            dataQuery += searchCondition;
+            countQuery += searchCondition;
+            queryParams.push(`%${search}%`);
+            countParams.push(`%${search}%`);
         }
 
-        query = query
-            .order('created_at', { ascending: false })
-            .range(offset, offset + limit - 1);
+        dataQuery += ` ORDER BY created_at DESC LIMIT $${queryParams.length + 1} OFFSET $${queryParams.length + 2}`;
+        queryParams.push(limit, offset);
 
-        const { data: products, error, count } = await query;
+        // Execute queries
+        const [countResult, dataResult] = await Promise.all([
+            pool.query(countQuery, countParams),
+            pool.query(dataQuery, queryParams)
+        ]);
 
-        if (error) {
-            console.error('Error fetching products:', error);
-            throw error;
-        }
+        const total = parseInt(countResult.rows[0].count);
 
         return res.json({
             success: true,
             data: {
-                products,
+                products: dataResult.rows,
                 pagination: {
                     page: parseInt(page),
                     limit: parseInt(limit),
-                    total: count,
-                    totalPages: Math.ceil(count / limit)
+                    total,
+                    totalPages: Math.ceil(total / limit)
                 }
             }
         });
 
     } catch (error) {
-        console.error('Get products error:', {
-            message: error.message,
-            timestamp: new Date().toISOString()
-        });
-        
+        console.error('❌ Get products error:', error.message);
         return res.status(500).json({
             success: false,
             message: 'Internal server error'
@@ -62,14 +67,12 @@ export async function getProductById(req, res) {
         const userId = req.user.userId;
         const { id } = req.params;
 
-        const { data: product, error } = await supabase
-            .from('products')
-            .select('*')
-            .eq('id', id)
-            .eq('user_id', userId)
-            .single();
+        const result = await pool.query(
+            'SELECT * FROM products WHERE id = $1 AND user_id = $2',
+            [id, userId]
+        );
 
-        if (error || !product) {
+        if (result.rows.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Product not found'
@@ -78,15 +81,11 @@ export async function getProductById(req, res) {
 
         return res.json({
             success: true,
-            data: { product }
+            data: { product: result.rows[0] }
         });
 
     } catch (error) {
-        console.error('Get product error:', {
-            message: error.message,
-            timestamp: new Date().toISOString()
-        });
-        
+        console.error('❌ Get product error:', error.message);
         return res.status(500).json({
             success: false,
             message: 'Internal server error'
@@ -103,40 +102,24 @@ export async function createProduct(req, res) {
         const userId = req.user.userId;
         const { articleNo, productService, inPrice, price, unit, inStock, description } = req.body;
 
-        const { data: product, error } = await supabase
-            .from('products')
-            .insert([
-                {
-                    article_no: articleNo,
-                    product_service: productService,
-                    in_price: inPrice || null,
-                    price,
-                    unit: unit || null,
-                    in_stock: inStock || null,
-                    description: description || null,
-                    user_id: userId
-                }
-            ])
-            .select()
-            .single();
+        const result = await pool.query(
+            `INSERT INTO products 
+            (article_no, product_service, in_price, price, unit, in_stock, description, user_id) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+            RETURNING *`,
+            [articleNo, productService, inPrice || null, price, unit || null, inStock || null, description || null, userId]
+        );
 
-        if (error) {
-            console.error('Create product error:', error);
-            throw error;
-        }
+        console.log(`✅ Product created: ${result.rows[0].id}`);
 
         return res.status(201).json({
             success: true,
             message: 'Product created successfully',
-            data: { product }
+            data: { product: result.rows[0] }
         });
 
     } catch (error) {
-        console.error('Create product error:', {
-            message: error.message,
-            timestamp: new Date().toISOString()
-        });
-        
+        console.error('❌ Create product error:', error.message);
         return res.status(500).json({
             success: false,
             message: 'Internal server error'
@@ -154,58 +137,75 @@ export async function updateProduct(req, res) {
         const { id } = req.params;
         const updates = req.body;
 
-        // Check if product exists and belongs to user
-        const { data: existingProduct } = await supabase
-            .from('products')
-            .select('id')
-            .eq('id', id)
-            .eq('user_id', userId)
-            .single();
+        // Check if product exists
+        const checkResult = await pool.query(
+            'SELECT id FROM products WHERE id = $1 AND user_id = $2',
+            [id, userId]
+        );
 
-        if (!existingProduct) {
+        if (checkResult.rows.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Product not found'
             });
         }
 
-        const updateData = {};
-        if (updates.articleNo !== undefined) updateData.article_no = updates.articleNo;
-        if (updates.productService !== undefined) updateData.product_service = updates.productService;
-        if (updates.inPrice !== undefined) updateData.in_price = updates.inPrice;
-        if (updates.price !== undefined) updateData.price = updates.price;
-        if (updates.unit !== undefined) updateData.unit = updates.unit;
-        if (updates.inStock !== undefined) updateData.in_stock = updates.inStock;
-        if (updates.description !== undefined) updateData.description = updates.description;
-        updateData.updated_at = new Date().toISOString();
+        // Build update query
+        const updateFields = [];
+        const updateValues = [];
+        let paramCounter = 1;
 
-        const { data: product, error } = await supabase
-            .from('products')
-            .update(updateData)
-            .eq('id', id)
-            .eq('user_id', userId)
-            .select()
-            .single();
-
-        if (error) {
-            console.error('Update product error:', error);
-            throw error;
+        if (updates.articleNo !== undefined) {
+            updateFields.push(`article_no = $${paramCounter++}`);
+            updateValues.push(updates.articleNo);
+        }
+        if (updates.productService !== undefined) {
+            updateFields.push(`product_service = $${paramCounter++}`);
+            updateValues.push(updates.productService);
+        }
+        if (updates.inPrice !== undefined) {
+            updateFields.push(`in_price = $${paramCounter++}`);
+            updateValues.push(updates.inPrice);
+        }
+        if (updates.price !== undefined) {
+            updateFields.push(`price = $${paramCounter++}`);
+            updateValues.push(updates.price);
+        }
+        if (updates.unit !== undefined) {
+            updateFields.push(`unit = $${paramCounter++}`);
+            updateValues.push(updates.unit);
+        }
+        if (updates.inStock !== undefined) {
+            updateFields.push(`in_stock = $${paramCounter++}`);
+            updateValues.push(updates.inStock);
+        }
+        if (updates.description !== undefined) {
+            updateFields.push(`description = $${paramCounter++}`);
+            updateValues.push(updates.description);
         }
 
-        console.log(`Product updated: ${product.id} by ${req.user.email}`);
+        updateFields.push(`updated_at = NOW()`);
+        updateValues.push(id, userId);
+
+        const updateQuery = `
+            UPDATE products 
+            SET ${updateFields.join(', ')}
+            WHERE id = $${paramCounter++} AND user_id = $${paramCounter}
+            RETURNING *
+        `;
+
+        const result = await pool.query(updateQuery, updateValues);
+
+        console.log(`✅ Product updated: ${result.rows[0].id}`);
 
         return res.json({
             success: true,
             message: 'Product updated successfully',
-            data: { product }
+            data: { product: result.rows[0] }
         });
 
     } catch (error) {
-        console.error('Update product error:', {
-            message: error.message,
-            timestamp: new Date().toISOString()
-        });
-        
+        console.error('❌ Update product error:', error.message);
         return res.status(500).json({
             success: false,
             message: 'Internal server error'
@@ -222,33 +222,19 @@ export async function deleteProduct(req, res) {
         const userId = req.user.userId;
         const { id } = req.params;
 
-        // Check if product exists and belongs to user
-        const { data: existingProduct } = await supabase
-            .from('products')
-            .select('id')
-            .eq('id', id)
-            .eq('user_id', userId)
-            .single();
+        const result = await pool.query(
+            'DELETE FROM products WHERE id = $1 AND user_id = $2 RETURNING id',
+            [id, userId]
+        );
 
-        if (!existingProduct) {
+        if (result.rows.length === 0) {
             return res.status(404).json({
                 success: false,
                 message: 'Product not found'
             });
         }
 
-        const { error } = await supabase
-            .from('products')
-            .delete()
-            .eq('id', id)
-            .eq('user_id', userId);
-
-        if (error) {
-            console.error('Delete product error:', error);
-            throw error;
-        }
-
-        console.log(`✅ Product deleted: ${id} by ${req.user.email}`);
+        console.log(`✅ Product deleted: ${id}`);
 
         return res.json({
             success: true,
@@ -256,11 +242,7 @@ export async function deleteProduct(req, res) {
         });
 
     } catch (error) {
-        console.error('Delete product error:', {
-            message: error.message,
-            timestamp: new Date().toISOString()
-        });
-        
+        console.error('❌ Delete product error:', error.message);
         return res.status(500).json({
             success: false,
             message: 'Internal server error'
