@@ -1,12 +1,10 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import authRoutes from './routes/authRoutes.js';
 import productRoutes from './routes/productRoutes.js';
-
-// Loading ENV
+import translationRoutes from './routes/translationRoutes.js';
+import dotenv from 'dotenv';
 dotenv.config();
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -27,6 +25,7 @@ app.get('/health', (_req, res) => {
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/translations', translationRoutes);
 
 // 404 handler
 app.use((_req, res) => {
@@ -37,7 +36,7 @@ app.use((_req, res) => {
 });
 
 // Error handler
-app.use((err, _req, res, next) => {
+app.use((err, _req, res, _next) => {
     console.error('Error:', err);
     res.status(500).json({
         success: false,
