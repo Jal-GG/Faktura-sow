@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import { supabase } from '../config/database.js';
+import pool from '../config/database.js';
 import { generateToken } from '../utils/jwt.js';
 
 /**
@@ -12,16 +12,15 @@ export async function login(req, res) {
         const { email, password } = req.body;
 
         // Find user by email
-        const { data: user, error: fetchError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', email)
-            .single();
+        const result = await pool.query(
+            'SELECT * FROM users WHERE email = $1',
+            [email]
+        );
 
-        if (fetchError || !user) {
-            // Small delay to prevent attacks
+        const user = result.rows[0];
+
+        if (!user) {
             await new Promise(resolve => setTimeout(resolve, 100));
-            
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password'
@@ -33,7 +32,6 @@ export async function login(req, res) {
 
         if (!isPasswordValid) {
             await new Promise(resolve => setTimeout(resolve, 100));
-            
             return res.status(401).json({
                 success: false,
                 message: 'Invalid email or password'
@@ -42,9 +40,8 @@ export async function login(req, res) {
 
         // Generate JWT token
         const token = generateToken(user.id, user.email);
-        console.log(`Login: ${user.email} at ${new Date().toISOString()}`);
+        console.log(`✅ Login: ${user.email} at ${new Date().toISOString()}`);
 
-        // Return success response
         return res.json({
             success: true,
             message: 'Login successful',
@@ -58,11 +55,7 @@ export async function login(req, res) {
         });
 
     } catch (error) {
-        console.error('Login error:', {
-            message: error.message,
-            timestamp: new Date().toISOString()
-        });
-        
+        console.error('❌ Login error:', error.message);
         return res.status(500).json({
             success: false,
             message: 'Internal server error'
@@ -74,55 +67,39 @@ export async function login(req, res) {
  * Register endpoint
  * POST /api/auth/register
  * Body: { email, password }
- * 
  */
 export async function register(req, res) {
     try {
         const { email, password } = req.body;
 
-        // Checking if user already exists
-        const { data: existingUser } = await supabase
-            .from('users')
-            .select('email')
-            .eq('email', email)
-            .maybeSingle();
+        // Check if user already exists
+        const existingUserResult = await pool.query(
+            'SELECT email FROM users WHERE email = $1',
+            [email]
+        );
 
-        if (existingUser) {
+        if (existingUserResult.rows.length > 0) {
             return res.status(409).json({
                 success: false,
                 message: 'User already exists'
             });
         }
 
-        // Hashing passwd
+        // Hash password
         const passwordHash = await bcrypt.hash(password, 10);
 
-        const { data: newUser, error: insertError } = await supabase
-            .from('users')
-            .insert([
-                {
-                    email,
-                    password_hash: passwordHash
-                }
-            ])
-            .select()
-            .single();
+        // Insert new user
+        const result = await pool.query(
+            'INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id, email, created_at',
+            [email, passwordHash]
+        );
 
-        if (insertError) {
-            console.error('User creation error:', {
-                message: insertError.message,
-                email: email,
-                timestamp: new Date().toISOString()
-            });
-            
-            throw insertError;
-        }
+        const newUser = result.rows[0];
 
         // Generate token
         const token = generateToken(newUser.id, newUser.email);
-        console.log(`New user: ${newUser.email} at ${new Date().toISOString()}`);
+        console.log(`✅ New user: ${newUser.email} at ${new Date().toISOString()}`);
 
-        // Return success response
         return res.status(201).json({
             success: true,
             message: 'User registered successfully',
@@ -136,11 +113,7 @@ export async function register(req, res) {
         });
 
     } catch (error) {
-        console.error('Registration error:', {
-            message: error.message,
-            timestamp: new Date().toISOString()
-        });
-        
+        console.error('❌ Registration error:', error.message);
         return res.status(500).json({
             success: false,
             message: 'Internal server error'
@@ -157,14 +130,14 @@ export async function verifyToken(req, res) {
     try {
         const userId = req.user.userId;
 
-        // Fetch user data
-        const { data: user, error } = await supabase
-            .from('users')
-            .select('id, email, created_at')
-            .eq('id', userId)
-            .single();
+        const result = await pool.query(
+            'SELECT id, email, created_at FROM users WHERE id = $1',
+            [userId]
+        );
 
-        if (error || !user) {
+        const user = result.rows[0];
+
+        if (!user) {
             return res.status(404).json({
                 success: false,
                 message: 'User not found'
@@ -184,11 +157,7 @@ export async function verifyToken(req, res) {
         });
 
     } catch (error) {
-        console.error('Token verification error:', {
-            message: error.message,
-            timestamp: new Date().toISOString()
-        });
-        
+        console.error('❌ Token verification error:', error.message);
         return res.status(500).json({
             success: false,
             message: 'Internal server error'
@@ -202,7 +171,7 @@ export async function verifyToken(req, res) {
  */
 export async function logout(req, res) {
     try {
-        console.log(`Logout: ${req.user?.email || 'unknown'} at ${new Date().toISOString()}`);
+        console.log(`✅ Logout: ${req.user?.email || 'unknown'} at ${new Date().toISOString()}`);
 
         return res.json({
             success: true,
@@ -210,11 +179,7 @@ export async function logout(req, res) {
         });
 
     } catch (error) {
-        console.error('Logout error:', {
-            message: error.message,
-            timestamp: new Date().toISOString()
-        });
-        
+        console.error('❌ Logout error:', error.message);
         return res.status(500).json({
             success: false,
             message: 'Internal server error'
