@@ -1,34 +1,33 @@
-import express from 'express';
+import express from "express";
 import {
-    getTranslationsByPage,
-    getAllTranslations,
-    getTranslationByKey,
-    createTranslation,
-    updateTranslation
-} from '../controllers/translationController.js';
-import { authenticateToken } from '../utils/jwt.js';
-import { validateRequest, validateParams } from '../middlewares/validationMiddleware.js';
+  getTranslationsByPage,
+  getAllTranslations,
+  getTranslationByKey,
+} from "../controllers/translationController.js";
 import {
-    createTranslationSchema,
-    updateTranslationSchema,
-    translationPageSchema,
-    translationKeySchema,
-    translationIdSchema
-} from '../validators/translationSchemas.js';
+  validateRequest,
+  validateParams,
+} from "../middlewares/validationMiddleware.js";
+import {
+  translationPageSchema,
+  translationKeySchema,
+} from "../validators/translationSchemas.js";
 
 const router = express.Router();
 
-// Public routes 
-router.get('/', getAllTranslations);
+// Public routes
+router.get("/", getAllTranslations);
 
-router.get('/:page',
-    validateParams(translationPageSchema),
-    getTranslationsByPage
+router.get(
+  "/:page",
+  validateParams(translationPageSchema),
+  getTranslationsByPage
 );
 
-router.get('/:page/:key',
-    validateParams(translationKeySchema),
-    getTranslationByKey
+router.get(
+  "/:page/:key",
+  validateParams(translationKeySchema),
+  getTranslationByKey
 );
 
 export default router;

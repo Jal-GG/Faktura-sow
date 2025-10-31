@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-const validPages = ['login', 'terms', 'pricelist'];
+const validPages = ['login', 'terms', 'pricelist', 'register'];
 
 export const createTranslationSchema = z.object({
     key: z
