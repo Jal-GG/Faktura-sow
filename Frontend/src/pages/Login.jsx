@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { api } from "../services/api";
+import PublicNavbar from "../components/PublicNavbar";
 import "../styles/Login.css";
 
 function Login({ onLogin }) {
@@ -10,7 +11,6 @@ function Login({ onLogin }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [language, setLanguage] = useState("english");
-  const [menuOpen, setMenuOpen] = useState(false);
   const [translations, setTranslations] = useState({});
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
 
@@ -43,6 +43,10 @@ function Login({ onLogin }) {
     try {
       const response = await api.login(email, password);
       if (response.success && response.data.token) {
+        // Store user info in localStorage
+        if (response.data.user) {
+          localStorage.setItem("user", JSON.stringify(response.data.user));
+        }
         onLogin(response.data.token);
         navigate("/pricelist");
       }
@@ -53,9 +57,16 @@ function Login({ onLogin }) {
     }
   };
 
-  const toggleLanguage = () => {
-    setLanguage(language === "english" ? "swedish" : "english");
+  const toggleLanguage = (newLanguage) => {
+    setLanguage(newLanguage);
   };
+
+  const menuItems = [
+    { to: "/login", label: getText("login_title") },
+    { to: "/register", label: getText("register_link") },
+    { to: "/terms", label: getText("terms_link") },
+    { href: "#", label: getText("privacy_link") },
+  ];
 
   if (!translationsLoaded) {
     return <div className="loading">Loading...</div>;
@@ -71,57 +82,11 @@ function Login({ onLogin }) {
         }}
       />
 
-      <header className="login-header">
-        <button
-          className="hamburger-menu"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Menu"
-        >
-          <span></span>
-          <span></span>
-          <span></span>
-        </button>
-
-        <img
-          src="https://storage.123fakturera.se/public/icons/diamond.png"
-          alt="Logo"
-          className="logo"
-        />
-
-        <button className="language-toggle" onClick={toggleLanguage}>
-          <span>{getText("language")}</span>
-          <img
-            src={
-              language === "english"
-                ? "https://storage.123fakturere.no/public/flags/GB.png"
-                : "https://storage.123fakturere.no/public/flags/SE.png"
-            }
-            alt="Flag"
-            className="flag-icon"
-          />
-        </button>
-      </header>
-
-      {menuOpen && (
-        <div className="mobile-menu">
-          <ul>
-            <li>
-              <Link to="/login">{getText("login_title")}</Link>
-            </li>
-            <li>
-              <Link to="/register">{getText("register_link")}</Link>
-            </li>
-            <li>
-              <Link to="/terms">{getText("terms_link")}</Link>
-            </li>
-            <li>
-              <a href="#" onClick={(e) => e.preventDefault()}>
-                {getText("privacy_link")}
-              </a>
-            </li>
-          </ul>
-        </div>
-      )}
+      <PublicNavbar
+        language={language}
+        onLanguageChange={toggleLanguage}
+        menuItems={menuItems}
+      />
 
       <div className="login-content">
         <div className="login-card">

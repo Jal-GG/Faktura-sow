@@ -33,14 +33,13 @@ function Register({ onRegister }) {
   };
 
   const getText = (key) => {
-    return translations[key] || key;
+    return translations["register_" + key] || translations[key] || key;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    // Validation
     if (password.length < 6) {
       setError(getText("password_requirements"));
       return;
@@ -102,7 +101,7 @@ function Register({ onRegister }) {
         />
 
         <button className="language-toggle" onClick={toggleLanguage}>
-          <span>{getText("language")}</span>
+          <span>{language === "english" ? "English" : "Svenska"}</span>
           <img
             src={
               language === "english"

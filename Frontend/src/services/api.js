@@ -37,18 +37,7 @@ export const api = {
   },
 
   async getTranslations(page, language = "english") {
-    const cacheKey = `translations_${page}_${language}`;
-
-    // Check localStorage first
-    const cached = localStorage.getItem(cacheKey);
-    if (cached) {
-      return {
-        success: true,
-        data: JSON.parse(cached),
-      };
-    }
-
-    // Fetch from API if not cached
+    // Fetch from API
     const response = await fetch(`${API_BASE_URL}/translations/${page}`);
 
     if (!response.ok) {
@@ -57,9 +46,6 @@ export const api = {
 
     const result = await response.json();
     const translations = result.data.translations[language];
-
-    // Store in localStorage
-    localStorage.setItem(cacheKey, JSON.stringify(translations));
 
     return {
       success: result.success,
