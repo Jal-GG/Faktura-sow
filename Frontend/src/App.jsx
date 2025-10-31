@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Terms from "./pages/Terms";
-import Pricelist from "./pages/Pricelist";
+import PriceList from "./pages/PriceList";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -29,6 +29,7 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setIsAuthenticated(false);
   };
 
@@ -64,7 +65,7 @@ function App() {
           path="/pricelist"
           element={
             isAuthenticated ? (
-              <Pricelist onLogout={handleLogout} />
+              <PriceList onLogout={handleLogout} />
             ) : (
               <Navigate to="/login" replace />
             )
