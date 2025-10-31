@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Terms from "./pages/Terms";
+import Pricelist from "./pages/Pricelist";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -54,6 +56,17 @@ function App() {
               <Navigate to="/pricelist" replace />
             ) : (
               <Register onRegister={handleRegister} />
+            )
+          }
+        />
+        <Route path="/terms" element={<Terms />} />
+        <Route
+          path="/pricelist"
+          element={
+            isAuthenticated ? (
+              <Pricelist onLogout={handleLogout} />
+            ) : (
+              <Navigate to="/login" replace />
             )
           }
         />
