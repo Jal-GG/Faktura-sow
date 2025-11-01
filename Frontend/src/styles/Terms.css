@@ -133,6 +133,7 @@
   margin-bottom: 30px;
   text-align: center;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  padding-top: 70px; /* Push heading below navbar */
 }
 
 .close-button {

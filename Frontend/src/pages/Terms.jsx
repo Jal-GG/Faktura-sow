@@ -121,6 +121,10 @@ function Terms() {
               .split("\n\n")
               .map((paragraph, index) => <p key={index}>{paragraph}</p>)}
         </div>
+
+        <button className="close-button" onClick={() => navigate("/login")}> 
+          {content.close_button || "Close and Go Back"}
+        </button>
       </div>
     </div>
   );
