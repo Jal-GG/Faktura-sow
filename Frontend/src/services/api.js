@@ -37,7 +37,18 @@ export const api = {
   },
 
   async getTranslations(page, language = "english") {
-    // Fetch from API
+    const cacheKey = `translations_${page}_${language}`;
+
+    // Check localStorage first
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) {
+      return {
+        success: true,
+        data: JSON.parse(cached),
+      };
+    }
+
+    // Fetch from API if not cached
     const response = await fetch(`${API_BASE_URL}/translations/${page}`);
 
     if (!response.ok) {
@@ -47,6 +58,9 @@ export const api = {
     const result = await response.json();
     const translations = result.data.translations[language];
 
+    // Store in localStorage
+    localStorage.setItem(cacheKey, JSON.stringify(translations));
+
     return {
       success: result.success,
       data: translations,
@@ -54,14 +68,12 @@ export const api = {
   },
 
   async getProducts(token, page = 1, limit = 20, search = "") {
-    const url = new URL(`${API_BASE_URL}/products`);
-    url.searchParams.append("page", page);
-    url.searchParams.append("limit", limit);
+    let queryString = `?page=${page}&limit=${limit}`;
     if (search) {
-      url.searchParams.append("search", search);
+      queryString += `&search=${encodeURIComponent(search)}`;
     }
 
-    const response = await fetch(url, {
+    const response = await fetch(`${API_BASE_URL}/products${queryString}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
