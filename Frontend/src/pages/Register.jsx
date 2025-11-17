@@ -21,7 +21,7 @@ function Register({ onRegister }) {
 
   const loadTranslations = async () => {
     try {
-      const response = await api.getTranslations("register", language);
+      const response = await api.getTranslations("login", language);
       if (response.success) {
         setTranslations(response.data);
         setTranslationsLoaded(true);
@@ -33,7 +33,7 @@ function Register({ onRegister }) {
   };
 
   const getText = (key) => {
-    return translations["register_" + key] || translations[key] || key;
+    return translations[key] || key.replace(/_/g, " ");
   };
 
   const handleSubmit = async (e) => {
@@ -70,10 +70,10 @@ function Register({ onRegister }) {
   };
 
   const menuItems = [
-    { to: "/login", label: getText("login_title") },
-    { to: "/register", label: getText("register_title") },
-    { to: "/terms", label: getText("terms_link") },
-    { href: "#", label: getText("privacy_link") },
+    { to: "/login", label: getText("login_title") || "Login" },
+    { to: "/register", label: "Register" },
+    { to: "/terms", label: getText("terms_link") || "Terms" },
+    { href: "#", label: getText("privacy_link") || "Privacy Policy" },
   ];
 
   if (!translationsLoaded) {
@@ -98,7 +98,7 @@ function Register({ onRegister }) {
 
       <div className="register-content">
         <div className="register-card">
-          <h1>{getText("register_title")}</h1>
+          <h1>{getText("register_title") || "Register"}</h1>
 
           {error && <div className="error-message">{error}</div>}
 
@@ -106,7 +106,7 @@ function Register({ onRegister }) {
             <div className="form-group">
               <input
                 type="email"
-                placeholder={getText("email_placeholder")}
+                placeholder={getText("email_placeholder") || "Email"}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -117,7 +117,7 @@ function Register({ onRegister }) {
             <div className="form-group">
               <input
                 type="password"
-                placeholder={getText("password_placeholder")}
+                placeholder={getText("password_placeholder") || "Password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -129,7 +129,7 @@ function Register({ onRegister }) {
             <div className="form-group">
               <input
                 type="password"
-                placeholder={getText("confirm_password_placeholder")}
+                placeholder={getText("Confirm password") || "Confirm password"}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
@@ -138,26 +138,44 @@ function Register({ onRegister }) {
               />
             </div>
 
-            <p className="password-hint">{getText("password_requirements")}</p>
+            <p className="password-hint">
+              {getText("password_requirements") ||
+                "Password must be at least 6 characters"}
+            </p>
 
             <button
               type="submit"
               className="register-button"
               disabled={loading}
             >
-              {loading ? "Loading..." : getText("register_button")}
+              {loading ? "Loading..." : "Register"}
             </button>
           </form>
 
           <div className="register-links">
             <p>
-              {getText("already_have_account")}{" "}
-              <Link to="/login">{getText("login_link")}</Link>
+              Already have an account?{" "}
+              <Link to="/login">{getText("login_title") || "Login"}</Link>
             </p>
-            <Link to="/terms">{getText("terms_link")}</Link>
+            <Link to="/terms">{getText("terms_link") || "Terms"}</Link>
           </div>
         </div>
       </div>
+
+      <footer className="register-footer">
+        <div className="footer-left">
+          <h2>123 Fakturera</h2>
+          <hr className="footer-divider" />
+          <p className="footer-copyright">
+            © Läftfaktura, ORO no. 638537, 2025. All rights reserved.
+          </p>
+        </div>
+        <div className="footer-right">
+          <Link to="/">{getText("footer_home") || "Home"}</Link>
+          <a href="#order">{getText("footer_order") || "Order"}</a>
+          <a href="#contact">{getText("footer_contact") || "Contact us"}</a>
+        </div>
+      </footer>
     </div>
   );
 }

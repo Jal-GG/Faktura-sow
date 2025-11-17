@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import "../styles/PriceList.css";
@@ -35,6 +35,9 @@ function Pricelist({ onLogout }) {
     return storedUser ? JSON.parse(storedUser) : { email: "", name: "" };
   });
   const [showAddModal, setShowAddModal] = useState(false);
+  const updateTimeouts = useRef({});
+  const [sortField, setSortField] = useState(null);
+  const [sortDirection, setSortDirection] = useState("asc");
   const [newProduct, setNewProduct] = useState({
     articleNo: "",
     productService: "",
@@ -54,6 +57,14 @@ function Pricelist({ onLogout }) {
     loadTranslations();
   }, [language]);
 
+  useEffect(() => {
+    return () => {
+      Object.values(updateTimeouts.current).forEach((timeout) => {
+        clearTimeout(timeout);
+      });
+    };
+  }, []);
+
   const loadTranslations = async () => {
     try {
       const response = await api.getTranslations("pricelist", language);
@@ -68,6 +79,15 @@ function Pricelist({ onLogout }) {
 
   const getText = (key) => {
     return translations[key] || key;
+  };
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    } else {
+      setSortField(field);
+      setSortDirection("asc");
+    }
   };
 
   // Create menuItems array that updates when translations change
@@ -222,28 +242,40 @@ function Pricelist({ onLogout }) {
     }
   };
 
-  const handleProductUpdate = async (id, field, value) => {
-    try {
-      const token = localStorage.getItem("token");
-      const updateData = {};
-      if (field === "article_no") updateData.articleNo = value;
-      else if (field === "product_service") updateData.productService = value;
-      else if (field === "in_price")
-        updateData.inPrice = parseFloat(value) || null;
-      else if (field === "price") updateData.price = parseFloat(value);
-      else if (field === "unit") updateData.unit = value;
-      else if (field === "in_stock")
-        updateData.inStock = parseInt(value) || null;
-      else if (field === "description") updateData.description = value;
+  const handleProductUpdate = (id, field, value) => {
+    setProducts(
+      products.map((p) => (p.id === id ? { ...p, [field]: value } : p))
+    );
 
-      await api.updateProduct(token, id, updateData);
-      setProducts(
-        products.map((p) => (p.id === id ? { ...p, [field]: value } : p))
-      );
-    } catch (err) {
-      console.error("Update failed:", err);
-      setError("Failed to update product");
+    const timeoutKey = `${id}-${field}`;
+    if (updateTimeouts.current[timeoutKey]) {
+      clearTimeout(updateTimeouts.current[timeoutKey]);
     }
+
+    updateTimeouts.current[timeoutKey] = setTimeout(async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const updateData = {};
+
+        if (field === "article_no") updateData.articleNo = value;
+        else if (field === "product_service") updateData.productService = value;
+        else if (field === "in_price")
+          updateData.inPrice = value ? parseFloat(value) : null;
+        else if (field === "price")
+          updateData.price = value ? parseFloat(value) : null;
+        else if (field === "unit") updateData.unit = value;
+        else if (field === "in_stock")
+          updateData.inStock = value ? parseInt(value) : null;
+        else if (field === "description") updateData.description = value;
+
+        await api.updateProduct(token, id, updateData);
+        delete updateTimeouts.current[timeoutKey];
+      } catch (err) {
+        console.error("Update failed:", err);
+        setError("Failed to update product");
+      }
+    }, 800); // 800ms debounce delay
   };
 
   const toggleLanguage = () => {
@@ -258,17 +290,31 @@ function Pricelist({ onLogout }) {
     setLanguageDropdownOpen(false);
   };
 
-  const filteredProducts = products.filter((product) => {
-    const matchesArticle =
-      !searchArticle ||
-      product.article_no?.toLowerCase().includes(searchArticle.toLowerCase());
-    const matchesProduct =
-      !searchProduct ||
-      product.product_service
-        ?.toLowerCase()
-        .includes(searchProduct.toLowerCase());
-    return matchesArticle && matchesProduct;
-  });
+  const filteredProducts = products
+    .filter((product) => {
+      const matchesArticle =
+        !searchArticle ||
+        product.article_no?.toLowerCase().includes(searchArticle.toLowerCase());
+      const matchesProduct =
+        !searchProduct ||
+        product.product_service
+          ?.toLowerCase()
+          .includes(searchProduct.toLowerCase());
+      return matchesArticle && matchesProduct;
+    })
+    .sort((a, b) => {
+      if (!sortField) return 0;
+
+      let aValue = a[sortField] || "";
+      let bValue = b[sortField] || "";
+
+      if (typeof aValue === "string") aValue = aValue.toLowerCase();
+      if (typeof bValue === "string") bValue = bValue.toLowerCase();
+
+      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      return 0;
+    });
 
   if (loading) {
     return <div className="loading">Loading...</div>;
@@ -290,15 +336,13 @@ function Pricelist({ onLogout }) {
         <div className="header-user-profile">
           <div className="header-user-avatar">
             <img
-              src={`https://ui-avatars.com/api/?name=${encodeURIComponent(
-                user.email || "User"
-              )}&background=fff&color=1e88e5`}
+              src="https://png.pngtree.com/png-clipart/20190924/original/pngtree-human-avatar-free-vector-png-image_4825373.jpg"
               alt="User"
             />
           </div>
           <div className="header-user-info">
-            <h3>{user.email || "User"}</h3>
-            <p>{user.company || "Company"}</p>
+            <h3>{user.email || "John Andre"}</h3>
+            <p>{user.company || "Stortford AS"}</p>
           </div>
         </div>
 
@@ -371,45 +415,47 @@ function Pricelist({ onLogout }) {
 
         {sidebarOpen && (
           <div
-            className="sidebar-overlay"
+            className="sidebar-overlay active"
             onClick={() => setSidebarOpen(false)}
           />
         )}
 
         <div className="main-content">
           <div className="search-section">
-            <input
-              type="text"
-              className="search-input"
-              placeholder={getText("search_article")}
-              value={searchArticle}
-              onChange={(e) => setSearchArticle(e.target.value)}
-            />
-            <input
-              type="text"
-              className="search-input"
-              placeholder={getText("search_product")}
-              value={searchProduct}
-              onChange={(e) => setSearchProduct(e.target.value)}
-            />
-          </div>
+            <div className="search-inputs-wrapper">
+              <input
+                type="text"
+                className="search-input"
+                placeholder={getText("search_article")}
+                value={searchArticle}
+                onChange={(e) => setSearchArticle(e.target.value)}
+              />
+              <input
+                type="text"
+                className="search-input"
+                placeholder={getText("search_product")}
+                value={searchProduct}
+                onChange={(e) => setSearchProduct(e.target.value)}
+              />
+            </div>
 
-          <div className="action-buttons">
-            <button
-              className="action-btn new-product"
-              onClick={handleAddProductClick}
-            >
-              <span className="btn-icon">+</span>
-              <span className="btn-text">{getText("new_product")}</span>
-            </button>
-            <button className="action-btn print-list">
-              <span className="btn-icon">🖨</span>
-              <span className="btn-text">{getText("print_list")}</span>
-            </button>
-            <button className="action-btn advanced-mode">
-              <span className="btn-icon">⚙</span>
-              <span className="btn-text">{getText("advanced_mode")}</span>
-            </button>
+            <div className="action-buttons">
+              <button
+                className="action-btn new-product"
+                onClick={handleAddProductClick}
+              >
+                <span className="btn-icon">+</span>
+                <span className="btn-text">{getText("new_product")}</span>
+              </button>
+              <button className="action-btn print-list">
+                <span className="btn-icon">🖨</span>
+                <span className="btn-text">{getText("print_list")}</span>
+              </button>
+              <button className="action-btn advanced-mode">
+                <span className="btn-icon">⚙</span>
+                <span className="btn-text">{getText("advanced_mode")}</span>
+              </button>
+            </div>
           </div>
 
           {error && <div className="error-message">{error}</div>}
@@ -547,8 +593,46 @@ function Pricelist({ onLogout }) {
                 <thead>
                   <tr>
                     <th></th>
-                    <th>{getText("article_no")}</th>
-                    <th>{getText("product_service")}</th>
+                    <th
+                      onClick={() => handleSort("article_no")}
+                      style={{ cursor: "pointer", userSelect: "none" }}
+                    >
+                      {getText("article_no")}
+                      <span
+                        style={{
+                          marginLeft: "8px",
+                          fontSize: "18px",
+                          color: "#4caf50",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {sortField === "article_no"
+                          ? sortDirection === "asc"
+                            ? "↑"
+                            : "↓"
+                          : "↕"}
+                      </span>
+                    </th>
+                    <th
+                      onClick={() => handleSort("product_service")}
+                      style={{ cursor: "pointer", userSelect: "none" }}
+                    >
+                      {getText("product_service")}
+                      <span
+                        style={{
+                          marginLeft: "8px",
+                          fontSize: "18px",
+                          color: "#4caf50",
+                          fontWeight: "bold",
+                        }}
+                      >
+                        {sortField === "product_service"
+                          ? sortDirection === "asc"
+                            ? "↑"
+                            : "↓"
+                          : "↕"}
+                      </span>
+                    </th>
                     <th>{getText("in_price")}</th>
                     <th>{getText("price")}</th>
                     <th>{getText("unit")}</th>

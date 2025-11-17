@@ -13,6 +13,7 @@ function Login({ onLogin }) {
   const [language, setLanguage] = useState("english");
   const [translations, setTranslations] = useState({});
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     loadTranslations();
@@ -65,7 +66,7 @@ function Login({ onLogin }) {
     { to: "/login", label: getText("login_title") },
     { to: "/register", label: getText("register_link") },
     { to: "/terms", label: getText("terms_link") },
-    { href: "#", label: getText("privacy_link") },
+    { to: "/privacy", label: getText("privacy_link") },
   ];
 
   if (!translationsLoaded) {
@@ -90,15 +91,16 @@ function Login({ onLogin }) {
 
       <div className="login-content">
         <div className="login-card">
-          <h1>{getText("login_title")}</h1>
+          <h1>{getText("login_title") || "Log in"}</h1>
 
           {error && <div className="error-message">{error}</div>}
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
+              <label className="form-label">Enter your email address</label>
               <input
                 type="email"
-                placeholder={getText("email_placeholder")}
+                placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -107,30 +109,84 @@ function Login({ onLogin }) {
             </div>
 
             <div className="form-group">
-              <input
-                type="password"
-                placeholder={getText("password_placeholder")}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-              />
+              <label className="form-label">Enter your password</label>
+              <div className="password-input-wrapper">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.69-1.64 1.72-3.19 3.05-4.52M10.59 10.59A2 2 0 1 0 12 14a2 2 0 0 0-1.41-.59Z" />
+                      <path d="M1 1l22 22" />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M1 12S5 5 12 5s11 7 11 7-4 7-11 7S1 12 1 12Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             <button type="submit" className="login-button" disabled={loading}>
-              {loading ? "Loading..." : getText("login_button")}
+              {loading ? "Loading..." : "Log in"}
             </button>
           </form>
 
           <div className="login-links">
+            <Link to="/register">Register</Link>
             <a href="#" onClick={(e) => e.preventDefault()}>
-              {getText("forgot_password")}
+              Forgotten password?
             </a>
-            <Link to="/register">{getText("register_link")}</Link>
-            <Link to="/terms">{getText("terms_link")}</Link>
           </div>
         </div>
       </div>
+
+      <footer className="login-footer">
+        <div className="footer-left">
+          <h2>123 Fakturera</h2>
+          <hr className="footer-divider" />
+          <p className="footer-copyright">
+            © Läftfaktura, ORO no. 638537, 2025. All rights reserved.
+          </p>
+        </div>
+        <div className="footer-right">
+          <Link to="/">{getText("footer_home") || "Home"}</Link>
+          <a href="#order">{getText("footer_order") || "Order"}</a>
+          <a href="#contact">{getText("footer_contact") || "Contact us"}</a>
+        </div>
+      </footer>
     </div>
   );
 }
