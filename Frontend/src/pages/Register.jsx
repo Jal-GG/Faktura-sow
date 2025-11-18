@@ -14,6 +14,8 @@ function Register({ onRegister }) {
   const [language, setLanguage] = useState("english");
   const [translations, setTranslations] = useState({});
   const [translationsLoaded, setTranslationsLoaded] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     loadTranslations();
@@ -21,7 +23,7 @@ function Register({ onRegister }) {
 
   const loadTranslations = async () => {
     try {
-      const response = await api.getTranslations("login", language);
+      const response = await api.getTranslations("register", language);
       if (response.success) {
         setTranslations(response.data);
         setTranslationsLoaded(true);
@@ -70,10 +72,10 @@ function Register({ onRegister }) {
   };
 
   const menuItems = [
-    { to: "/login", label: getText("login_title") || "Login" },
-    { to: "/register", label: "Register" },
-    { to: "/terms", label: getText("terms_link") || "Terms" },
-    { href: "#", label: getText("privacy_link") || "Privacy Policy" },
+    { to: "/login", label: getText("register_login_link") },
+    { to: "/register", label: getText("register_title") },
+    { to: "/terms", label: getText("register_terms_link") },
+    { to: "/privacy", label: getText("register_privacy_link") },
   ];
 
   if (!translationsLoaded) {
@@ -104,9 +106,12 @@ function Register({ onRegister }) {
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
+              <label className="form-label">
+                {getText("register_email_label")}
+              </label>
               <input
                 type="email"
-                placeholder={getText("email_placeholder") || "Email"}
+                placeholder={getText("register_email_placeholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -115,66 +120,148 @@ function Register({ onRegister }) {
             </div>
 
             <div className="form-group">
-              <input
-                type="password"
-                placeholder={getText("password_placeholder") || "Password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-                minLength={6}
-              />
+              <label className="form-label">
+                {getText("register_password_label")}
+              </label>
+              <div className="password-input-wrapper">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder={getText("register_password_placeholder")}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.69-1.64 1.72-3.19 3.05-4.52M10.59 10.59A2 2 0 1 0 12 14a2 2 0 0 0-1.41-.59Z" />
+                      <path d="M1 1l22 22" />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M1 12S5 5 12 5s11 7 11 7-4 7-11 7S1 12 1 12Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             <div className="form-group">
-              <input
-                type="password"
-                placeholder={getText("Confirm password") || "Confirm password"}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-                disabled={loading}
-                minLength={6}
-              />
+              <label className="form-label">
+                {getText("register_confirm_password_label")}
+              </label>
+              <div className="password-input-wrapper">
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  placeholder={getText("register_confirm_password_placeholder")}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.69-1.64 1.72-3.19 3.05-4.52M10.59 10.59A2 2 0 1 0 12 14a2 2 0 0 0-1.41-.59Z" />
+                      <path d="M1 1l22 22" />
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M1 12S5 5 12 5s11 7 11 7-4 7-11 7S1 12 1 12Z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
-
-            <p className="password-hint">
-              {getText("password_requirements") ||
-                "Password must be at least 6 characters"}
-            </p>
 
             <button
               type="submit"
               className="register-button"
               disabled={loading}
             >
-              {loading ? "Loading..." : "Register"}
+              {loading
+                ? getText("register_loading_text")
+                : getText("register_button_text")}
             </button>
           </form>
 
           <div className="register-links">
             <p>
-              Already have an account?{" "}
-              <Link to="/login">{getText("login_title") || "Login"}</Link>
+              {getText("register_already_have_account")}{" "}
+              <Link to="/login">{getText("register_login_link")}</Link>
             </p>
-            <Link to="/terms">{getText("terms_link") || "Terms"}</Link>
           </div>
         </div>
       </div>
 
       <footer className="register-footer">
-        <div className="footer-left">
-          <h2>123 Fakturera</h2>
-          <hr className="footer-divider" />
-          <p className="footer-copyright">
-            © Läftfaktura, ORO no. 638537, 2025. All rights reserved.
-          </p>
+        <div className="footer-top">
+          <div className="footer-left">
+            <h2>{getText("register_footer_company_name")}</h2>
+          </div>
+          <div className="footer-right">
+            <Link to="/">{getText("register_footer_home")}</Link>
+            <Link to="/order">{getText("register_footer_order")}</Link>
+            <Link to="/contact">{getText("register_footer_contact")}</Link>
+          </div>
         </div>
-        <div className="footer-right">
-          <Link to="/">{getText("footer_home") || "Home"}</Link>
-          <a href="#order">{getText("footer_order") || "Order"}</a>
-          <a href="#contact">{getText("footer_contact") || "Contact us"}</a>
-        </div>
+        <hr className="footer-divider" />
+        <p className="footer-copyright">
+          {getText("register_footer_copyright")}
+        </p>
       </footer>
     </div>
   );

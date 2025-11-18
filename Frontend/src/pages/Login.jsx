@@ -97,10 +97,10 @@ function Login({ onLogin }) {
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">Enter your email address</label>
+              <label className="form-label">{getText("email_label")}</label>
               <input
                 type="email"
-                placeholder="Email address"
+                placeholder={getText("email_placeholder_text")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -109,11 +109,11 @@ function Login({ onLogin }) {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Enter your password</label>
+              <label className="form-label">{getText("password_label")}</label>
               <div className="password-input-wrapper">
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Password"
+                  placeholder={getText("password_placeholder_text")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -160,32 +160,32 @@ function Login({ onLogin }) {
             </div>
 
             <button type="submit" className="login-button" disabled={loading}>
-              {loading ? "Loading..." : "Log in"}
+              {loading ? getText("loading_text") : getText("login_button_text")}
             </button>
           </form>
 
           <div className="login-links">
-            <Link to="/register">Register</Link>
+            <Link to="/register">{getText("register_text")}</Link>
             <a href="#" onClick={(e) => e.preventDefault()}>
-              Forgotten password?
+              {getText("forgot_password_text")}
             </a>
           </div>
         </div>
       </div>
 
       <footer className="login-footer">
-        <div className="footer-left">
-          <h2>123 Fakturera</h2>
-          <hr className="footer-divider" />
-          <p className="footer-copyright">
-            © Läftfaktura, ORO no. 638537, 2025. All rights reserved.
-          </p>
+        <div className="footer-top">
+          <div className="footer-left">
+            <h2>{getText("footer_company_name")}</h2>
+          </div>
+          <div className="footer-right">
+            <Link to="/">{getText("footer_home")}</Link>
+            <Link to="/order">{getText("footer_order")}</Link>
+            <Link to="/contact">{getText("footer_contact")}</Link>
+          </div>
         </div>
-        <div className="footer-right">
-          <Link to="/">{getText("footer_home") || "Home"}</Link>
-          <a href="#order">{getText("footer_order") || "Order"}</a>
-          <a href="#contact">{getText("footer_contact") || "Contact us"}</a>
-        </div>
+        <hr className="footer-divider" />
+        <p className="footer-copyright">{getText("footer_copyright")}</p>
       </footer>
     </div>
   );

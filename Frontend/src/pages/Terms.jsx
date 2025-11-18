@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../services/api";
 import PublicNavbar from "../components/PublicNavbar";
 import "../styles/Terms.css";
 
@@ -8,54 +9,31 @@ function Terms() {
   const [language, setLanguage] = useState(() => {
     return localStorage.getItem("language") || "swedish";
   });
-  const [translations, setTranslations] = useState(null);
+  const [translations, setTranslations] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetchTermsFromDB();
+    loadTranslations();
   }, [language]);
 
-  const fetchTermsFromDB = async () => {
+  const loadTranslations = async () => {
     try {
       setLoading(true);
-      const API_BASE_URL =
-        import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-      const response = await fetch(`${API_BASE_URL}/translations/terms`);
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch terms");
-      }
-
-      const data = await response.json();
-
-      if (data.success && data.data) {
-        setTranslations(data.data.translations);
-      } else {
-        throw new Error("Invalid data format");
+      const response = await api.getTranslations("terms", language);
+      if (response.success) {
+        setTranslations(response.data);
       }
     } catch (err) {
-      console.error("Error fetching terms:", err);
+      console.error("Failed to load translations:", err);
       setError(err.message);
-      setTranslations(getDefaultContent());
     } finally {
       setLoading(false);
     }
   };
 
-  const getDefaultContent = () => {
-    return {
-      english: {
-        terms_title: "Terms",
-        close_button: "Close and Go Back",
-        terms_content: "Terms and conditions content...",
-      },
-      swedish: {
-        terms_title: "Terms",
-        close_button: "Stäng och gå tillbaka",
-        terms_content: "Villkor innehåll...",
-      },
-    };
+  const getText = (key) => {
+    return translations[key] || key;
   };
 
   const toggleLanguageMenu = (newLanguage) => {
@@ -64,11 +42,11 @@ function Terms() {
   };
 
   const menuItems = [
-    { to: "/login", label: "Home" },
-    { href: "#order", label: "Order" },
-    { href: "#customers", label: "Our Customers" },
-    { href: "#about", label: "About us" },
-    { href: "#contact", label: "Contact Us" },
+    { to: "/login", label: getText("terms_menu_home") },
+    { href: "#order", label: getText("terms_menu_order") },
+    { href: "#customers", label: getText("terms_menu_customers") },
+    { href: "#about", label: getText("terms_menu_about") },
+    { href: "#contact", label: getText("terms_menu_contact") },
   ];
 
   if (loading) {
@@ -81,14 +59,12 @@ function Terms() {
               "url(https://storage.123fakturera.se/public/wallpapers/sverige43.jpg)",
           }}
         />
-        <div className="loading-container">Loading...</div>
+        <div className="loading-container">
+          {getText("terms_loading") || "Loading..."}
+        </div>
       </div>
     );
   }
-
-  const content = translations
-    ? translations[language]
-    : getDefaultContent()[language];
 
   return (
     <div className="terms-page">
@@ -107,23 +83,27 @@ function Terms() {
       />
 
       <div className="terms-content">
-        <h1 className="terms-title">{content.terms_title || "Terms"}</h1>
+        <h1 className="terms-title">{getText("terms_title")}</h1>
 
         <button className="close-button" onClick={() => navigate("/login")}>
-          {content.close_button || "Close and Go Back"}
+          {getText("terms_close_button")}
         </button>
 
-        {error && <div className="error-box">Error loading terms: {error}</div>}
+        {error && (
+          <div className="error-box">
+            {getText("terms_error")}: {error}
+          </div>
+        )}
 
         <div className="terms-box">
-          {content.terms_content &&
-            content.terms_content
+          {getText("terms_content") &&
+            getText("terms_content")
               .split("\n\n")
               .map((paragraph, index) => <p key={index}>{paragraph}</p>)}
         </div>
 
-        <button className="close-button" onClick={() => navigate("/login")}> 
-          {content.close_button || "Close and Go Back"}
+        <button className="close-button" onClick={() => navigate("/login")}>
+          {getText("terms_close_button")}
         </button>
       </div>
     </div>

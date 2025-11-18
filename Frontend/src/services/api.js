@@ -37,7 +37,8 @@ export const api = {
   },
 
   async getTranslations(page, language = "english") {
-    const cacheKey = `translations_${page}_${language}`;
+    const CACHE_VERSION = "v1.3";
+    const cacheKey = `translations_${CACHE_VERSION}_${page}_${language}`;
 
     // Check localStorage first
     const cached = localStorage.getItem(cacheKey);
@@ -47,6 +48,16 @@ export const api = {
         data: JSON.parse(cached),
       };
     }
+
+    // Clear old version caches
+    Object.keys(localStorage).forEach((key) => {
+      if (
+        key.startsWith("translations_") &&
+        !key.startsWith(`translations_${CACHE_VERSION}_`)
+      ) {
+        localStorage.removeItem(key);
+      }
+    });
 
     // Fetch from API if not cached
     const response = await fetch(`${API_BASE_URL}/translations/${page}`);
@@ -58,7 +69,7 @@ export const api = {
     const result = await response.json();
     const translations = result.data.translations[language];
 
-    // Store in localStorage
+    // Store in localStorage with version
     localStorage.setItem(cacheKey, JSON.stringify(translations));
 
     return {
