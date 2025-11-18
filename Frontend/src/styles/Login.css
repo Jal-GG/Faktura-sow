@@ -220,33 +220,34 @@
 
 @media (max-width: 768px) {
   .login-footer {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 20px;
     padding: 20px;
   }
 
-  .footer-left {
-    max-width: 100%;
+  .footer-top {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 15px;
+    margin-bottom: 10px;
   }
 
   .footer-left h2 {
-    font-size: 24px;
-  }
-
-  .footer-copyright {
-    text-align: center;
+    font-size: 26px;
   }
 
   .footer-right {
-    flex-direction: row;
-    gap: 20px;
-    flex-wrap: wrap;
-    justify-content: center;
+    gap: 25px;
   }
 
   .footer-right a {
-    font-size: 15px;
+    font-size: 16px;
+  }
+
+  .footer-divider {
+    margin: 0 0 10px 0;
+  }
+
+  .footer-copyright {
+    font-size: 11px;
   }
 }
